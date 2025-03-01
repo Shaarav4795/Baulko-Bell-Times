@@ -1281,3 +1281,74 @@ footer .logo {
 .notification-btn.skip:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
+
+/* Styling for the extension info in the More tab */
+.extension-info {
+    padding: 0.5rem 0;
+}
+
+.extension-info h4 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.extension-steps {
+    background-color: rgba(98, 0, 234, 0.05);
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin: 1.5rem 0;
+}
+
+.extension-steps h5 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.extension-steps ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0;
+}
+
+.extension-steps li {
+    margin-bottom: 0.8rem;
+    line-height: 1.5;
+}
+
+.extension-steps li:last-child {
+    margin-bottom: 0;
+}
+
+.extension-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.extension-link:hover {
+    text-decoration: underline;
+}
+
+.extension-steps code {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.extension-note {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-left: 4px solid rgba(255, 193, 7, 0.5);
+    padding: 1rem;
+    border-radius: 0 6px 6px 0;
+    margin-top: 1.5rem;
+}
+
+.extension-note p {
+    margin: 0;
+    font-size: 0.95rem;
+}
