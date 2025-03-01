@@ -339,60 +339,29 @@ h2 {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Update footer styling for simpler version */
 footer {
     margin-top: 2rem;
     padding: 1.5rem;
     background-color: rgba(98, 0, 234, 0.05);
     border-top: 1px solid rgba(98, 0, 234, 0.1);
+    text-align: center;
 }
 
 .footer-content {
     max-width: 1200px;
     margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.branding {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.site-title-small {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 600;
-    color: var(--primary-color);
-    font-size: 1rem;
-}
-
-footer .logo {
-    width: 25px;
-    height: 25px;
-    margin-right: 0.5rem;
-    animation: gentle-ring 15s ease-in-out infinite;
 }
 
 footer a {
     color: var(--primary-color);
     text-decoration: none;
     transition: all 0.2s ease;
+    font-weight: 500;
 }
 
 footer a:hover {
     text-decoration: underline;
-}
-
-/* Responsive footer */
-@media (max-width: 600px) {
-    .footer-content {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
 }
 
 /* Media Queries */
