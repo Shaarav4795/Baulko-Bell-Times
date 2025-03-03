@@ -1426,3 +1426,40 @@ function playTimerCompleteSound() {
     backgroundOsc.start(now);
     backgroundOsc.stop(now + 0.9);
 }
+
+// Function to schedule page refreshes at specific times
+function schedulePageRefreshes() {
+    function scheduleRefresh(hour) {
+        const now = new Date();
+        const nextRefresh = new Date(now);
+        nextRefresh.setHours(hour, 0, 0, 0);
+        
+        // If the time has already passed today, schedule for tomorrow
+        if (now > nextRefresh) {
+            nextRefresh.setDate(nextRefresh.getDate() + 1);
+        }
+        
+        const timeUntilRefresh = nextRefresh.getTime() - now.getTime();
+        setTimeout(() => {
+            window.location.reload();
+            // Schedule the next refresh after this one
+            scheduleRefresh(hour);
+        }, timeUntilRefresh);
+    }
+
+    // Schedule refreshes at 12 AM and 6 AM
+    scheduleRefresh(0);  // 12 AM
+    scheduleRefresh(6);  // 6 AM
+}
+
+// Add to window.onload
+window.onload = function() {
+    // ... existing code ...
+    initializeUser();
+    initializeTheme();
+    loadNotes();
+    loadQuickLinks();
+    addPeriodStyles();
+    schedulePageRefreshes();  // Add this line
+    // ... existing code ...
+};
