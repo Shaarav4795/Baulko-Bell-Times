@@ -3,6 +3,7 @@
 
 :root {
     --primary-color: #6200ea;
+    --primary-rgb: 98, 0, 234;  /* RGB values of primary color */
     --background-color: #f9f9f9;
     --card-background: #fff;
     --text-color: #333;
@@ -57,6 +58,9 @@ h2 {
 }
 
 .schedule-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
     background: var(--card-background);
     border-radius: 12px;
     box-shadow: 0 8px 16px rgba(0,0,0,0.1);
@@ -103,21 +107,32 @@ h2 {
 }
 
 .quick-link {
+    display: flex;
+    align-items: center;
     padding: 0.8rem 1rem;
-    background: transparent;
-    border: 2px solid var(--primary-color);
+    margin: 0.5rem 0;
+    background: var(--card-background);
     border-radius: 6px;
-    color: var(--primary-color);
+    color: var(--text-color);
     text-decoration: none;
     transition: all 0.2s ease;
+    position: relative;
+    border: 2px solid var(--border-color);
     font-size: 0.95rem;
-    text-align: center;
     font-weight: 500;
     animation: fadeIn 0.7s ease-out;
-    position: relative;
     overflow: hidden;
 }
 
+.quick-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Remove the old shine effect and add a new subtle one */
 .quick-link::after {
     content: '';
     position: absolute;
@@ -125,60 +140,157 @@ h2 {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(var(--primary-rgb), 0.05),
+        transparent
+    );
     transform: translateX(-100%);
-    transition: transform 0.5s ease;
+    transition: transform 0.3s ease;
 }
 
 .quick-link:hover::after {
     transform: translateX(100%);
 }
 
+.drag-handle {
+    color: inherit;
+    opacity: 0.5;
+    cursor: grab;
+    user-select: none;
+    padding: 0 8px;
+    font-size: 16px;
+    transition: opacity 0.3s ease;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+}
+
 .link-edit {
     display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
     background: var(--card-background);
-    border: 2px solid var(--border-color);
-    border-radius: 6px;
-    cursor: move;
+    border-radius: 10px;
+    margin: 12px 0;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.link-edit.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.link-edit .drag-handle {
+    color: var(--text-color);
+    opacity: 0.5;
+    cursor: grab;
+    padding: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.link-edit:hover .drag-handle {
+    opacity: 0.8;
+}
+
+.link-inputs {
+    display: flex;
+    flex: 1;
+    gap: 12px;
 }
 
 .link-edit input {
-    padding: 0.5rem;
-    border: 2px solid var(--border-color);
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     font-family: 'Open Sans', sans-serif;
     font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: var(--background-color);
+}
+
+.link-edit input.link-title {
     flex: 1;
+}
+
+.link-edit input.link-url {
+    flex: 2;
 }
 
 .link-edit input:focus {
     outline: none;
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
 }
 
-.dragging {
+.link-edit .clear-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-color);
     opacity: 0.5;
-    border-style: dashed;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.link-edit .clear-btn:hover {
+    opacity: 1;
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 1.5rem;
+    justify-content: flex-end;
+}
+
+.modal-buttons button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.modal-buttons .settings-btn {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.modal-buttons .settings-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: white;
+}
+
+.modal-buttons .upload-btn {
+    background: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    color: white;
+}
+
+.modal-buttons .upload-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2);
 }
 
 .quick-links-editor {
-    margin-top: 1rem;
-}
-
-.quick-links-editor input {
-    padding: 0.5rem;
-    border: 1.5px solid var(--border-color);
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
-    width: 100%;
-}
-
-.editor-buttons {
-    display: flex;
-    gap: 0.5rem;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: var(--background-color);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
 }
 
 .header {
@@ -259,7 +371,10 @@ h2 {
     padding: 0.8rem 0;
     font-family: 'Montserrat', sans-serif;
     line-height: 1.2;
-    background: linear-gradient(to right, rgba(98, 0, 234, 0.05), rgba(98, 0, 234, 0.1), rgba(98, 0, 234, 0.05));
+    background: linear-gradient(to right, 
+        rgba(var(--primary-rgb), 0.05),
+        rgba(var(--primary-rgb), 0.1),
+        rgba(var(--primary-rgb), 0.05));
     border-radius: 12px;
     padding: 1.2rem;
     margin: 1.5rem 0;
@@ -268,6 +383,15 @@ h2 {
     letter-spacing: 0.5px;
     position: relative;
     overflow: hidden;
+}
+
+#countdown .period-details {
+    display: block;
+    font-size: 0.75em;
+    margin-top: 0.5rem;
+    opacity: 0.9;
+    font-weight: 500;
+    color: var(--primary-color);
 }
 
 #countdown::after {
@@ -315,12 +439,11 @@ h2 {
     position: absolute;
     left: 0;
     right: 0;
-    top: 50%;  /* Changed from hardcoded percentage */
-    transform: translateY(-50%);  /* Center the line vertically */
-    border-top: 2px solid var(--primary-color);
-    opacity: 0.8;
+    top: 50%;
+    transform: translateY(-50%);
+    border-top: 2px dashed var(--primary-color);
+    opacity: 0.4;
     z-index: 1;
-    animation: pulse 2s infinite ease-in-out;
 }
 
 /* Add a small time label */
@@ -426,10 +549,15 @@ footer a:hover {
     }
 
     .notepad {
-        margin: 1rem 0;  /* Adjust margin for mobile */
+        margin: 1rem 0;
+        order: 3; /* Place after schedule and quick links on mobile */
     }
 
     .sidebar {
+        gap: 1rem;
+    }
+
+    .schedule-content {
         gap: 1rem;
     }
 }
@@ -767,7 +895,7 @@ footer a:hover {
 }
 
 .notepad {
-    margin: 1.5rem 0 0 0;  /* Updated margin to only be on top */
+    margin: 1.5rem 0;
     background: var(--card-background);
     border-radius: 12px;
     box-shadow: 0 8px 16px rgba(0,0,0,0.1);
@@ -776,6 +904,8 @@ footer a:hover {
     box-sizing: border-box;
     animation: fadeIn 0.7s ease-out;
     transition: all 0.3s ease;
+    order: 2; /* Place after schedule content */
+    grid-column: 1;
 }
 
 .notepad:hover {
@@ -920,36 +1050,36 @@ footer a:hover {
 }
 
 .timer-display {
-    font-size: 2.8rem;
-    font-family: 'Montserrat', sans-serif;
+    font-size: 2.5rem;
     font-weight: 600;
-    color: var(--primary-color);
-    margin: 0.5rem 0;
-    background: linear-gradient(to right, rgba(98, 0, 234, 0.05), rgba(98, 0, 234, 0.1), rgba(98, 0, 234, 0.05));
-    border-radius: 12px;
-    padding: 1rem 1.5rem;
-    letter-spacing: 2px;
     text-align: center;
-    width: 100%;
-    box-sizing: border-box;
+    margin: 1rem 0;
+    padding: 0.5rem;
+    color: var(--primary-color);
     position: relative;
-    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.timer-display:hover {
+    background: rgba(98, 0, 234, 0.05);
+    border-radius: 8px;
 }
 
 .timer-display::before {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
+    left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    animation: timer-shine 8s infinite;
-}
-
-@keyframes timer-shine {
-    0% { left: -100%; }
-    20%, 100% { left: 100%; }
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(var(--primary-rgb), 0.1), 
+        transparent
+    );
+    transform: translateX(-100%);
+    animation: timer-shine 2s infinite;
 }
 
 .timer-controls {
@@ -957,10 +1087,12 @@ footer a:hover {
     gap: 0.5rem;
     margin-top: 1rem;
     width: 100%;
+    flex-wrap: wrap;
 }
 
 .timer-btn {
     flex: 1;
+    min-width: calc(50% - 0.25rem);
     padding: 0.8rem;
     border: 2px solid var(--primary-color);
     border-radius: 6px;
@@ -985,6 +1117,30 @@ footer a:hover {
     color: white;
 }
 
+.timer-btn.stop-btn {
+    border-color: #ff4444;
+    color: #ff4444;
+}
+
+.timer-btn.stop-btn:hover {
+    background: #ff4444;
+    color: white;
+}
+
+.timer-input {
+    outline: none;
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    caret-color: var(--primary-color);
+}
+
+.timer-input:focus {
+    background: rgba(98, 0, 234, 0.05);
+    box-shadow: 0 0 0 2px rgba(98, 0, 234, 0.2);
+}
+
 .sidebar {
     display: flex;
     flex-direction: column;
@@ -992,17 +1148,16 @@ footer a:hover {
     animation: fadeIn 0.9s ease-out;
 }
 
-/* Add pulse animation for current time indicator */
-@keyframes pulse {
-    0% { opacity: 0.7; }
-    50% { opacity: 1; }
-    100% { opacity: 0.7; }
-}
-
 /* Add subtle animations for page load */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { 
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .schedule-content {
@@ -1351,4 +1506,558 @@ footer .logo {
 .extension-note p {
     margin: 0;
     font-size: 0.95rem;
+}
+
+/* Countdown settings styling */
+.countdown-settings {
+    padding: 0.5rem 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.countdown-settings h4 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.countdown-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.countdown-options label {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    cursor: pointer;
+}
+
+.countdown-options input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+/* Name settings styling */
+.name-settings {
+    padding: 0.5rem 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.name-settings h4 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.name-edit {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.name-edit input {
+    flex: 1;
+    padding: 0.8rem;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.name-edit input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(98, 0, 234, 0.1);
+}
+
+/* Welcome modal styling */
+.welcome-modal .modal-content {
+    max-width: 500px;
+    text-align: center;
+    padding: 2.5rem;
+}
+
+.welcome-modal h3 {
+    color: var(--primary-color);
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.welcome-modal p {
+    color: var(--text-color);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.welcome-name-section {
+    background: rgba(98, 0, 234, 0.05);
+    padding: 2rem;
+    border-radius: 12px;
+    margin-top: 2rem;
+}
+
+.welcome-name-section h4 {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+}
+
+.welcome-subtitle {
+    font-size: 0.95rem !important;
+    opacity: 0.8;
+    margin-bottom: 1.5rem !important;
+}
+
+#welcome-name-input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1.1rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+#welcome-name-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(98, 0, 234, 0.1);
+}
+
+.welcome-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.welcome-continue-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 1rem 2.5rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.welcome-continue-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(98, 0, 234, 0.2);
+}
+
+.welcome-skip-btn {
+    background: transparent;
+    color: var(--text-color);
+    border: 2px solid var(--border-color);
+    padding: 1rem 2.5rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.welcome-skip-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+}
+
+#welcome-name-input::placeholder {
+    text-align: center;
+    color: var(--text-color);
+    opacity: 0.5;
+}
+
+/* More tab styling improvements */
+#more-tab {
+    padding: 1rem 0.5rem;
+}
+
+.name-settings, .countdown-settings {
+    padding: 1.2rem;
+    margin-bottom: 2rem;
+    background: rgba(98, 0, 234, 0.02);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.name-settings h4, .countdown-settings h4 {
+    color: var(--primary-color);
+    margin-bottom: 1.2rem;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.name-edit {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.name-edit input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.8rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.countdown-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+.countdown-options label {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+    width: 100%;
+    justify-content: center;
+}
+
+.countdown-options label:hover {
+    background-color: rgba(98, 0, 234, 0.05);
+}
+
+.extension-info {
+    padding: 1.2rem;
+    background: rgba(98, 0, 234, 0.02);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.extension-info h4 {
+    color: var(--primary-color);
+    margin-bottom: 1.2rem;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.extension-info > p {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.extension-steps {
+    background-color: rgba(98, 0, 234, 0.05);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.extension-steps h5 {
+    margin-top: 0;
+    margin-bottom: 1.2rem;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.extension-steps ol {
+    padding-left: 2rem;
+    margin-bottom: 0;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.extension-steps li {
+    margin-bottom: 1rem;
+    line-height: 1.5;
+    padding-left: 0.5rem;
+}
+
+.extension-note {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-left: 4px solid rgba(255, 193, 7, 0.5);
+    padding: 1.2rem;
+    border-radius: 0 12px 12px 0;
+    margin-top: 2rem;
+    text-align: center;
+}
+
+/* Settings Modal Styles */
+.settings-modal {
+    max-width: 600px;
+    width: 95%;
+    border-radius: 16px;
+    padding: 2rem;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.settings-modal h3 {
+    color: var(--primary-color);
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.settings-description {
+    color: var(--text-color);
+    opacity: 0.8;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.quick-links-editor {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: var(--background-color);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.link-edit {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--card-background);
+    border-radius: 10px;
+    margin: 12px 0;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.link-edit.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.link-edit .drag-handle {
+    color: var(--text-color);
+    opacity: 0.5;
+    cursor: grab;
+    padding: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.link-edit:hover .drag-handle {
+    opacity: 0.8;
+}
+
+.link-inputs {
+    display: flex;
+    flex: 1;
+    gap: 12px;
+}
+
+.link-edit input {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: var(--background-color);
+}
+
+.link-edit input.link-title {
+    flex: 1;
+}
+
+.link-edit input.link-url {
+    flex: 2;
+}
+
+.link-edit input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+}
+
+.link-edit .clear-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    opacity: 0.5;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.link-edit .clear-btn:hover {
+    opacity: 1;
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 1.5rem;
+    justify-content: flex-end;
+}
+
+.modal-buttons button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.modal-buttons .settings-btn {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.modal-buttons .settings-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: white;
+}
+
+.modal-buttons .upload-btn {
+    background: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    color: white;
+}
+
+.modal-buttons .upload-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2);
+}
+
+.reset-settings {
+    padding: 1.2rem;
+    margin-bottom: 2rem;
+    background: rgba(220, 53, 69, 0.02);
+    border-radius: 12px;
+    border: 1px solid #dc3545;
+    animation: fadeIn 0.6s ease-out;
+}
+
+.reset-settings h4 {
+    color: #dc3545;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.reset-settings p {
+    color: var(--text-color);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 1.2rem;
+    text-align: center;
+    opacity: 0.8;
+}
+
+.reset-btn {
+    display: block;
+    width: 100%;
+    padding: 0.8rem;
+    background: transparent;
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+    color: #dc3545;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    animation: fadeIn 0.7s ease-out;
+}
+
+.reset-btn:hover {
+    background: #dc3545;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+}
+
+.settings-tabs {
+    animation: fadeIn 0.4s ease-out;
+}
+
+.tab-btn {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.tab-content {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.theme-presets h4, 
+.theme-custom h4,
+.name-settings h4,
+.countdown-settings h4,
+.extension-info h4 {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.theme-grid {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.theme-btn {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.name-edit,
+.countdown-options,
+.extension-steps,
+.reset-settings {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.name-edit input,
+.countdown-options label,
+.extension-steps ol,
+.reset-btn {
+    animation: fadeIn 0.7s ease-out;
+}
+
+.extension-note {
+    animation: fadeIn 0.7s ease-out;
+}
+
+.extension-link {
+    animation: fadeIn 0.7s ease-out;
+}
+
+.extension-steps code {
+    animation: fadeIn 0.7s ease-out;
+}
+
+/* Update the fadeIn animation to be smoother */
+@keyframes fadeIn {
+    from { 
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

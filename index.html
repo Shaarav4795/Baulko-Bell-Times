@@ -62,9 +62,10 @@
                     <h3 class="pomodoro-title">Study Timer</h3>
                     <div class="timer-display">25:00</div>
                     <div class="timer-controls">
-                        <button class="timer-btn active" onclick="setTimerMode('pomodoro')">Focus</button>
-                        <button class="timer-btn" onclick="setTimerMode('break')">Break</button>
+                        <button class="timer-btn" onclick="setTimerMode('pomodoro')" id="pomodoro-btn">Focus</button>
+                        <button class="timer-btn" onclick="setTimerMode('break')" id="break-btn">Break</button>
                         <button class="timer-btn" id="timer-toggle" onclick="toggleTimer()">Start</button>
+                        <button class="timer-btn stop-btn" id="timer-stop" onclick="stopTimer()">Stop</button>
                     </div>
                 </div>
             </div>
@@ -220,6 +221,31 @@
             </div>
 
             <div id="more-tab" class="tab-content">
+                <div class="name-settings">
+                    <h4>Your Name</h4>
+                    <div class="name-edit">
+                        <input type="text" id="name-input" placeholder="Enter your name">
+                        <button onclick="updateName()" class="settings-btn">Update Name</button>
+                    </div>
+                </div>
+                <div class="countdown-settings">
+                    <h4>Countdown Display</h4>
+                    <div class="countdown-options">
+                        <label>
+                            <input type="checkbox" id="show-room" checked onchange="updateCountdownPreferences()">
+                            Show Room Number
+                        </label>
+                        <label>
+                            <input type="checkbox" id="show-subject" checked onchange="updateCountdownPreferences()">
+                            Show Subject Name
+                        </label>
+                    </div>
+                </div>
+                <div class="reset-settings">
+                    <h4>Reset Settings</h4>
+                    <p>Reset all settings to their default values. This will clear your name, preferences, quick links, notes, and theme.</p>
+                    <button onclick="resetAllSettings()" class="reset-btn">Reset All Settings</button>
+                </div>
                 <div class="extension-info">
                     <h4>Chrome Extension</h4>
                     <p>Get the Baulko Bell Times Chrome extension for quick access from your browser!</p>
@@ -228,7 +254,8 @@
                         <h5>Installation Instructions:</h5>
                         <ol>
                             <li>Open <a href="https://drive.google.com/drive/folders/1aljeqUz_4ZmBM-dFm2YXBnHlQTfAyUDG" target="_blank" class="extension-link">this Google Drive link</a></li>
-                            <li>Press the "Download all" button</li>
+                            <li>Select All</li>
+                            <li>Press the 'Download' button</li>
                             <li>Extract the downloaded ZIP file</li>
                             <li>Open <code>chrome://extensions</code> in your browser</li>
                             <li>Enable "Developer mode" using the toggle in the top-right</li>
@@ -243,6 +270,24 @@
                 </div>
             </div>
             <button class="close-btn" onclick="toggleSettingsModal()">×</button>
+        </div>
+    </div>
+
+    <!-- Add Welcome Modal -->
+    <div id="welcome-modal" class="modal welcome-modal">
+        <div class="modal-content welcome-content">
+            <h3>Welcome to Baulko Bell Times! 👋</h3>
+            <p>This app helps you keep track of your school schedule and upcoming periods.</p>
+            
+            <div class="welcome-name-section">
+                <h4>What's your name?</h4>
+                <p class="welcome-subtitle">We'll use this to personalize your experience (optional)</p>
+                <input type="text" id="welcome-name-input" placeholder="Enter your name" maxlength="30" style="text-align: center;">
+                <div class="welcome-buttons">
+                    <button onclick="skipName()" class="welcome-skip-btn">Skip</button>
+                    <button onclick="setInitialName()" class="welcome-continue-btn">Continue</button>
+                </div>
+            </div>
         </div>
     </div>
 </body>

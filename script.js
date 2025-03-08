@@ -1,6 +1,19 @@
-let userTimetable = localStorage.getItem('userTimetable');
+// ==============================================
+// SCHOOL CONFIGURATION
+// ==============================================
 
-const bellTimes = {
+// School Name - Used in various places including page title
+const SCHOOL_NAME = "Baulko";
+
+// School Links - Default quick links shown in the sidebar
+const DEFAULT_QUICK_LINKS = [
+    { title: 'Moodle', url: 'http://web1.baulkham-h.schools.nsw.edu.au' },
+    { title: 'Sentral', url: 'https://baulkham-h.sentral.com.au' },
+    { title: 'Classroom', url: 'https://classroom.google.com' }
+];
+
+// Bell Times Schedule - Define the daily schedule for each day
+const BELL_TIMES = {
     Monday: [
         { name: "Roll Call", time: "08:38 AM" },
         { name: "Period 1", time: "08:44 AM" },
@@ -78,10 +91,42 @@ const bellTimes = {
     ],
 };
 
+// Time Settings - Configure time-based features
+const TIME_SETTINGS = {
+    // Greeting time ranges (in minutes from midnight)
+    MORNING_START: 360,    // 6 AM
+    AFTERNOON_START: 720,  // 12 PM
+    EVENING_START: 1110,   // 6:30 PM
+    NIGHT_START: 1290,     // 9:30 PM
+    
+    // Auto refresh times (hours in 24h format)
+    REFRESH_TIMES: [0, 6], // Refresh at 12 AM and 6 AM
+};
+
+// Study Timer Settings
+const TIMER_MODES = {
+    pomodoro: 25 * 60, // 25 minutes in seconds
+    break: 5 * 60      // 5 minutes in seconds
+};
+
+// ==============================================
+// APPLICATION CODE BELOW
+// ==============================================
+
+let userTimetable = localStorage.getItem('userTimetable');
+
+// Use BELL_TIMES for all bell times references
+const bellTimes = BELL_TIMES;
+
 const daySelector = document.getElementById("day-selector");
 const scheduleList = document.getElementById("schedule-list");
 const countdown = document.getElementById("countdown");
 const selectedDayDisplay = document.getElementById("selected-day");
+
+let timer = null;
+let timeLeft = 25 * 60; // 25 minutes in seconds
+let isTimerRunning = false;
+let timerAudioInterval = null;
 
 function mergeTimetableData(day) {
     const bellSchedule = bellTimes[day];
@@ -246,6 +291,20 @@ function getNextPeriod(day) {
     return null;
 }
 
+function getCountdownPreferences() {
+    const showRoom = localStorage.getItem('showRoom') !== 'false';
+    const showSubject = localStorage.getItem('showSubject') !== 'false';
+    return { showRoom, showSubject };
+}
+
+function updateCountdownPreferences() {
+    const showRoom = document.getElementById('show-room').checked;
+    const showSubject = document.getElementById('show-subject').checked;
+    localStorage.setItem('showRoom', showRoom);
+    localStorage.setItem('showSubject', showSubject);
+    updateCountdown(); // Refresh the countdown display
+}
+
 function updateCountdown() {
     const now = new Date();
     const currentDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
@@ -277,9 +336,9 @@ function updateCountdown() {
             periodMinutes = hours * 60 + minutes;
         }
 
-        const diffMinutes = periodMinutes - currentTimeMinutes - 1;  // Subtract 1 to fix the off-by-one issue
+        const diffMinutes = periodMinutes - currentTimeMinutes - 1;
 
-        if (diffMinutes >= 0 && diffMinutes < timeUntilNextMinutes) {  // Changed > to >= to include the current minute
+        if (diffMinutes >= 0 && diffMinutes < timeUntilNextMinutes) {
             nextPeriod = period;
             timeUntilNextMinutes = diffMinutes;
         }
@@ -296,9 +355,32 @@ function updateCountdown() {
         } else {
             countdownText += `${minutes}m ${seconds}s`;
         }
+
+        // Get the next period's details from timetable if available
+        let periodDetails = '';
+        const { showRoom, showSubject } = getCountdownPreferences();
         
-        const displayText = `Next period (${nextPeriod.name}) in: ${countdownText}`;
-        countdown.textContent = displayText;
+        if (userTimetable) {
+            const timetableData = JSON.parse(userTimetable)[currentDay];
+            if (timetableData) {
+                let periodNum = nextPeriod.name.split(' ')[1];
+                if (periodNum && timetableData[periodNum]) {
+                    const [subject, room] = timetableData[periodNum];
+                    const details = [];
+                    
+                    if (showSubject && subject) details.push(subject);
+                    if (showRoom && room) details.push(room);
+                    
+                    if (details.length > 0) {
+                        periodDetails = `\n${details.join(' - ')}`;
+                    }
+                }
+            }
+        }
+        
+        const displayText = `Next period in: ${countdownText}${periodDetails}`;
+        countdown.innerHTML = displayText.replace('\n', '<br><span class="period-details">');
+        if (periodDetails) countdown.innerHTML += '</span>';
         document.title = `${countdownText} - Baulko Bell Times`;
     } else {
         countdown.textContent = "No more periods today.";
@@ -312,9 +394,9 @@ function getGreeting() {
     const minutes = now.getMinutes();
     const timeInMinutes = hours * 60 + minutes;
     const userName = localStorage.getItem('userName');
-    const greeting = timeInMinutes >= 360 && timeInMinutes < 720 ? "Good morning" : 
-                    timeInMinutes >= 720 && timeInMinutes < 1110 ? "Good afternoon" :
-                    timeInMinutes >= 1110 && timeInMinutes < 1290 ? "Good evening" :
+    const greeting = timeInMinutes >= TIME_SETTINGS.MORNING_START && timeInMinutes < TIME_SETTINGS.AFTERNOON_START ? "Good morning" : 
+                    timeInMinutes >= TIME_SETTINGS.AFTERNOON_START && timeInMinutes < TIME_SETTINGS.EVENING_START ? "Good afternoon" :
+                    timeInMinutes >= TIME_SETTINGS.EVENING_START && timeInMinutes < TIME_SETTINGS.NIGHT_START ? "Good evening" :
                     "Good night";
     
     return userName ? `${greeting}, ${userName}` : greeting;
@@ -336,9 +418,9 @@ function getBaseGreeting() {
     const minutes = now.getMinutes();
     const timeInMinutes = hours * 60 + minutes;
     
-    return timeInMinutes >= 360 && timeInMinutes < 720 ? "Good morning" : 
-           timeInMinutes >= 720 && timeInMinutes < 1110 ? "Good afternoon" :
-           timeInMinutes >= 1110 && timeInMinutes < 1290 ? "Good evening" :
+    return timeInMinutes >= TIME_SETTINGS.MORNING_START && timeInMinutes < TIME_SETTINGS.AFTERNOON_START ? "Good morning" : 
+           timeInMinutes >= TIME_SETTINGS.AFTERNOON_START && timeInMinutes < TIME_SETTINGS.EVENING_START ? "Good afternoon" :
+           timeInMinutes >= TIME_SETTINGS.EVENING_START && timeInMinutes < TIME_SETTINGS.NIGHT_START ? "Good evening" :
            "Good night";
 }
 
@@ -375,18 +457,80 @@ updateGreeting(); // Initial call
 updateSchedule(); // Initial call
 
 function initializeUser() {
-    const userName = localStorage.getItem('userName');
-    if (!userName) {
-        // Show modal on first visit
-        const name = prompt("Welcome! Please enter your name:");
-        if (name) {
-            localStorage.setItem('userName', name.trim());
-            updateGreeting(); // Update greeting with the new name
+    const onboardingComplete = localStorage.getItem('onboardingComplete') === 'true';
+    if (!onboardingComplete) {
+        showWelcomeModal();
+    } else {
+        // Set the name in the settings input if it exists
+        const userName = localStorage.getItem('userName');
+        const nameInput = document.getElementById('name-input');
+        if (nameInput && userName) {
+            nameInput.value = userName;
         }
     }
 }
 
-initializeUser();
+function showWelcomeModal() {
+    const modal = document.getElementById('welcome-modal');
+    const nameInput = document.getElementById('welcome-name-input');
+    modal.style.display = 'block';
+    
+    // Focus the input field
+    nameInput.focus();
+    
+    // Handle enter key
+    nameInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            setInitialName();
+        }
+    });
+}
+
+function setInitialName() {
+    const nameInput = document.getElementById('welcome-name-input');
+    const name = nameInput.value.trim();
+    
+    if (name) {
+        localStorage.setItem('userName', name);
+        updateGreeting();
+    }
+    
+    document.getElementById('welcome-modal').style.display = 'none';
+    // Set onboarding complete flag
+    localStorage.setItem('onboardingComplete', 'true');
+}
+
+function updateName() {
+    const nameInput = document.getElementById('name-input');
+    const name = nameInput.value.trim();
+    
+    if (name) {
+        localStorage.setItem('userName', name);
+        updateGreeting();
+        
+        // Show success message
+        const successMsg = document.createElement('div');
+        successMsg.className = 'name-update-success';
+        successMsg.textContent = 'Name updated successfully!';
+        nameInput.parentNode.appendChild(successMsg);
+        
+        // Remove success message after 2 seconds
+        setTimeout(() => {
+            successMsg.remove();
+        }, 2000);
+    }
+}
+
+// Update the updateGreeting function to handle no name case more gracefully
+function updateGreeting() {
+    const greetingTextElement = document.getElementById('greeting-text');
+    const userNameElement = document.getElementById('user-name');
+    const userName = localStorage.getItem('userName');
+    const baseGreeting = getBaseGreeting();
+    
+    greetingTextElement.textContent = baseGreeting;
+    userNameElement.textContent = userName ? `, ${userName}` : '';
+}
 
 // Add this with other initialization code
 document.getElementById('user-name').addEventListener('click', changeName);
@@ -862,6 +1006,13 @@ function updateDynamicTheme(type) {
     
     Object.entries(theme).forEach(([property, value]) => {
         document.documentElement.style.setProperty(property, value);
+        // Update RGB values when primary color changes
+        if (property === '--primary-color') {
+            const rgb = hexToRgb(value);
+            if (rgb) {
+                document.documentElement.style.setProperty('--primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+            }
+        }
     });
 }
 
@@ -921,6 +1072,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+    
+    // Set initial countdown preference states
+    const { showRoom, showSubject } = getCountdownPreferences();
+    if (document.getElementById('show-room')) {
+        document.getElementById('show-room').checked = showRoom;
+    }
+    if (document.getElementById('show-subject')) {
+        document.getElementById('show-subject').checked = showSubject;
+    }
 });
 
 // Update setTheme function to handle async hemisphere detection
@@ -949,9 +1109,34 @@ function setTheme(themeName) {
         const theme = themes[themeName];
         Object.entries(theme).forEach(([property, value]) => {
             document.documentElement.style.setProperty(property, value);
+            // Update RGB values when primary color changes
+            if (property === '--primary-color') {
+                const rgb = hexToRgb(value);
+                if (rgb) {
+                    document.documentElement.style.setProperty('--primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+                }
+            }
         });
     }
     localStorage.setItem('theme', themeName);
+}
+
+// Add helper function to convert hex to RGB
+function hexToRgb(hex) {
+    // Remove # if present
+    hex = hex.replace('#', '');
+    
+    // Handle both short and long hex formats
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+    
+    const bigint = parseInt(hex, 16);
+    return {
+        r: (bigint >> 16) & 255,
+        g: (bigint >> 8) & 255,
+        b: bigint & 255
+    };
 }
 
 function switchTab(tabName) {
@@ -1111,28 +1296,42 @@ function loadQuickLinks() {
     }
     
     // Load saved links or use defaults
-    const savedLinks = JSON.parse(localStorage.getItem('quickLinks')) || defaultQuickLinks;
-    quickLinksList.innerHTML = savedLinks.map(link => `
-        <a href="${link.url}" class="quick-link" target="_blank">${link.title}</a>
+    const savedLinks = JSON.parse(localStorage.getItem('quickLinks')) || DEFAULT_QUICK_LINKS;
+    quickLinksList.innerHTML = savedLinks.map((link) => `
+        <a href="${ensureHttps(link.url)}" class="quick-link" target="_blank">
+            ${link.title}
+        </a>
     `).join('');
 }
 
-// Remove drag and drop related functions and their calls
+// Function to ensure URLs have https://
+function ensureHttps(url) {
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        return 'https://' + url;
+    }
+    return url;
+}
+
+// Update editQuickLinks function to handle https and maintain order
 function editQuickLinks() {
-    const savedLinks = JSON.parse(localStorage.getItem('quickLinks')) || defaultQuickLinks;
+    const savedLinks = JSON.parse(localStorage.getItem('quickLinks')) || DEFAULT_QUICK_LINKS;
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.display = 'block';
     
     modal.innerHTML = `
-        <div class="modal-content">
+        <div class="modal-content settings-modal">
             <h3>Edit Quick Links</h3>
+            <p class="settings-description">Drag and drop to reorder your quick links, or add new ones below.</p>
             <div class="quick-links-editor">
                 ${savedLinks.map((link, index) => `
                     <div class="link-edit" data-index="${index}">
-                        <input type="text" placeholder="Title" value="${link.title}" class="link-title">
-                        <input type="text" placeholder="URL" value="${link.url}" class="link-url">
-                        <button onclick="deleteQuickLink(${index})" class="clear-btn">×</button>
+                        <div class="drag-handle">⋮⋮</div>
+                        <div class="link-inputs">
+                            <input type="text" placeholder="Title" value="${link.title}" class="link-title">
+                            <input type="text" placeholder="URL" value="${link.url}" class="link-url">
+                        </div>
+                        <button onclick="deleteQuickLink(${index})" class="clear-btn" title="Delete link">×</button>
                     </div>
                 `).join('')}
             </div>
@@ -1145,79 +1344,116 @@ function editQuickLinks() {
     `;
     
     document.body.appendChild(modal);
-}
-
-function addQuickLink() {
-    const editor = document.querySelector('.quick-links-editor');
-    const index = document.querySelectorAll('.link-edit').length;
     
-    const newLink = document.createElement('div');
-    newLink.className = 'link-edit';
-    newLink.dataset.index = index;
-    newLink.innerHTML = `
-        <input type="text" placeholder="Title" class="link-title">
-        <input type="text" placeholder="URL" class="link-url">
-        <button onclick="deleteQuickLink(${index})" class="clear-btn">Delete</button>
-    `;
+    // Setup drag and drop for editor
+    setupEditorDragAndDrop(modal.querySelector('.quick-links-editor'));
+}
+
+function setupEditorDragAndDrop(container) {
+    const items = container.getElementsByClassName('link-edit');
     
-    editor.insertBefore(newLink, editor.lastElementChild);
-}
-
-function deleteQuickLink(index) {
-    const linkElement = document.querySelector(`.link-edit[data-index="${index}"]`);
-    if (linkElement) {
-        linkElement.remove();
-    }
-}
-
-function saveQuickLinks() {
-    const links = [];
-    document.querySelectorAll('.link-edit').forEach(linkEdit => {
-        const title = linkEdit.querySelector('.link-title').value.trim();
-        let url = linkEdit.querySelector('.link-url').value.trim();
+    Array.from(items).forEach(item => {
+        const dragHandle = item.querySelector('.drag-handle');
         
-        // Add protocol if missing
-        if (!url.startsWith('http://') && !url.startsWith('https://')) {
-            url = 'https://' + url;
-        }
+        dragHandle.addEventListener('mousedown', () => {
+            item.draggable = true;
+        });
         
-        if (title && url) {
-            links.push({ title, url });
-        }
+        dragHandle.addEventListener('mouseup', () => {
+            item.draggable = false;
+        });
+        
+        item.addEventListener('dragstart', handleEditorDragStart);
+        item.addEventListener('dragend', handleEditorDragEnd);
+        item.addEventListener('dragover', handleEditorDragOver);
+        item.addEventListener('drop', handleEditorDrop);
     });
-    
-    localStorage.setItem('quickLinks', JSON.stringify(links));
-    loadQuickLinks();
-    closeQuickLinksEditor();
 }
 
-function closeQuickLinksEditor() {
-    const modal = document.querySelector('.modal');
-    if (modal) {
-        modal.remove();
+function handleEditorDragStart(e) {
+    this.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', this.dataset.index);
+}
+
+function handleEditorDragEnd(e) {
+    this.classList.remove('dragging');
+    this.draggable = false;
+}
+
+function handleEditorDragOver(e) {
+    e.preventDefault();
+    const draggingItem = document.querySelector('.link-edit.dragging');
+    if (draggingItem === this) return;
+    
+    const container = this.parentNode;
+    const afterElement = getDragAfterElement(container, e.clientY);
+    
+    if (afterElement) {
+        container.insertBefore(draggingItem, afterElement);
+    } else {
+        container.appendChild(draggingItem);
     }
 }
 
-let timer = null;
-let timeLeft = 25 * 60; // 25 minutes in seconds
-let isTimerRunning = false;
-let currentMode = 'pomodoro';
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.link-edit:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
 
-const TIMER_MODES = {
-    pomodoro: 25 * 60,
-    break: 5 * 60
-};
+function handleEditorDrop(e) {
+    e.preventDefault();
+    // Update all indexes after drop
+    document.querySelectorAll('.link-edit').forEach((item, index) => {
+        item.dataset.index = index;
+    });
+}
+
+let timerMode = 'pomodoro';
+let timerDuration = 25 * 60; // 25 minutes in seconds
+let breakDuration = 5 * 60;  // 5 minutes in seconds
 
 function setTimerMode(mode) {
-    if (isTimerRunning) return; // Don't switch modes while timer is running
+    timerMode = mode;
+    if (mode === 'pomodoro') {
+        timerDuration = 25 * 60;
+        document.getElementById('pomodoro-btn').classList.add('active');
+        document.getElementById('break-btn').classList.remove('active');
+    } else {
+        timerDuration = 5 * 60;
+        document.getElementById('break-btn').classList.add('active');
+        document.getElementById('pomodoro-btn').classList.remove('active');
+    }
+    updateTimerDisplay(timerDuration);
+    stopTimer(); // Reset the timer when switching modes
+}
+
+function updateTimerDisplay(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    const display = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    document.querySelector('.timer-display').textContent = display;
+}
+
+function stopTimer() {
+    clearInterval(timer);
+    clearInterval(timerAudioInterval);
+    timerAudioInterval = null;
+    isTimerRunning = false;
+    document.getElementById('timer-toggle').textContent = 'Start';
     
-    currentMode = mode;
-    timeLeft = TIMER_MODES[mode];
-    updateTimerDisplay();
-    
-    // Update active button
-    document.querySelectorAll('.timer-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelector(`.timer-btn[onclick="setTimerMode('${mode}')"]`).classList.add('active');
+    // Reset to the full duration of current mode
+    timeLeft = timerDuration;
+    updateTimerDisplay(timeLeft);
 }
 
 function toggleTimer() {
@@ -1228,24 +1464,9 @@ function toggleTimer() {
         isTimerRunning = false;
         toggleBtn.textContent = 'Start';
     } else {
-        // Check notification permission when starting timer
-        if (Notification.permission === "default") {
-            // Show explanation before requesting permission
-            showNotificationExplanation(() => {
-                // This callback is called when user clicks "Allow"
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        startTimer();
-                    } else {
-                        // Still start the timer even if they decline notifications
-                        startTimer();
-                    }
-                });
-            });
-        } else {
-            // Permission already granted or denied, just start the timer
+        requestNotificationPermission().then(() => {
             startTimer();
-        }
+        });
     }
 }
 
@@ -1258,39 +1479,52 @@ function startTimer() {
 function updateTimer() {
     if (timeLeft > 0) {
         timeLeft--;
-        updateTimerDisplay();
+        updateTimerDisplay(timeLeft);
     } else {
         // Timer finished
         clearInterval(timer);
         isTimerRunning = false;
         document.getElementById('timer-toggle').textContent = 'Start';
         
-        // Play improved notification sound
         playTimerCompleteSound();
         
-        // Show notification
-        if (Notification.permission === "granted") {
-            new Notification(`${currentMode === 'pomodoro' ? 'Focus' : 'Break'} time is up!`, {
-                icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path d=%22M50 15c-15 0-25 10-25 25v25l-10 10h70l-10-10V40c0-15-10-25-25-25z%22 fill=%22%236200ea%22/><path d=%22M50 85c5.5 0 10-4.5 10-10H40c0 5.5 4.5 10 10 10z%22 fill=%22%236200ea%22/><path d=%22M50 15c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5z%22 fill=%22%236200ea%22/></svg>',
-                body: `Time to ${currentMode === 'pomodoro' ? 'take a break' : 'focus again'}!`
-            });
-        }
+        // Send notification
+        sendNotification(
+            `${timerMode === 'pomodoro' ? 'Focus' : 'Break'} time is up!`,
+            `Time to ${timerMode === 'pomodoro' ? 'take a break' : 'focus again'}!`
+        );
         
         // Switch modes automatically
-        setTimerMode(currentMode === 'pomodoro' ? 'break' : 'pomodoro');
+        setTimerMode(timerMode === 'pomodoro' ? 'break' : 'pomodoro');
     }
 }
 
-function updateTimerDisplay() {
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-    const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    document.querySelector('.timer-display').textContent = display;
+// Add this function to handle notification permission
+async function requestNotificationPermission() {
+    // Check if we already asked
+    const askedBefore = localStorage.getItem('notificationAsked') === 'true';
+    
+    // If permission is already granted or denied, don't ask again
+    if (Notification.permission === 'granted' || Notification.permission === 'denied') {
+        return Notification.permission;
+    }
+    
+    // If we haven't asked before, show the explanation
+    if (!askedBefore) {
+        return new Promise((resolve) => {
+            showNotificationExplanation(() => {
+                Notification.requestPermission().then(permission => {
+                    localStorage.setItem('notificationAsked', 'true');
+                    resolve(permission);
+                });
+            });
+        });
+    }
+    
+    return Notification.permission;
 }
 
-// Function to show notification explanation
 function showNotificationExplanation(onAllow) {
-    // Create a modal to explain notifications
     const modal = document.createElement('div');
     modal.className = 'modal notification-modal';
     modal.style.display = 'block';
@@ -1309,7 +1543,6 @@ function showNotificationExplanation(onAllow) {
     
     document.body.appendChild(modal);
     
-    // Add event listeners
     document.getElementById('notification-allow').addEventListener('click', () => {
         document.body.removeChild(modal);
         onAllow();
@@ -1317,8 +1550,40 @@ function showNotificationExplanation(onAllow) {
     
     document.getElementById('notification-skip').addEventListener('click', () => {
         document.body.removeChild(modal);
-        startTimer(); // Start timer anyway
+        localStorage.setItem('notificationAsked', 'true');
+        startTimer();
     });
+}
+
+function sendNotification(title, body) {
+    if (Notification.permission === "granted") {
+        try {
+            // Create and show the notification
+            const notification = new Notification(title, {
+                body: body,
+                icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path d=%22M50 15c-15 0-25 10-25 25v25l-10 10h70l-10-10V40c0-15-10-25-25-25z%22 fill=%22%236200ea%22/><path d=%22M50 85c5.5 0 10-4.5 10-10H40c0 5.5 4.5 10 10 10z%22 fill=%22%236200ea%22/><path d=%22M50 15c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5z%22 fill=%22%236200ea%22/></svg>',
+                requireInteraction: true,
+                silent: true,
+                tag: 'timer-notification' // Ensures only one notification is shown
+            });
+            
+            notification.onclick = function() {
+                window.focus();
+                this.close();
+            };
+            
+            // Ensure notification is shown even in background
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'showNotification',
+                    title: title,
+                    body: body
+                });
+            }
+        } catch (error) {
+            console.error('Failed to send notification:', error);
+        }
+    }
 }
 
 // Update the togglePomodoro function to properly handle sidebar visibility
@@ -1370,64 +1635,59 @@ document.addEventListener('DOMContentLoaded', addPeriodStyles);
 
 // Add this function to create a better timer sound
 function playTimerCompleteSound() {
-    // Create audio context
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const audioCtx = new AudioContext();
+    if (timerAudioInterval) return; // Don't start if already playing
     
-    // Function to create our notes
-    function createOscillator(freq, type, startTime, duration) {
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
+    function playSound() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
         
-        oscillator.type = type;
-        oscillator.frequency.value = freq;
+        function createOscillator(freq, type, startTime, duration) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.type = type;
+            oscillator.frequency.value = freq;
+            
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+            gainNode.gain.setValueAtTime(0.3, startTime + duration - 0.05);
+            gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.start(startTime);
+            oscillator.stop(startTime + duration);
+        }
         
-        // Create a nice envelope
-        gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
-        gainNode.gain.setValueAtTime(0.3, startTime + duration - 0.05);
-        gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+        const now = audioCtx.currentTime;
         
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
+        createOscillator(523.25, 'sine', now, 0.2);      // C5
+        createOscillator(659.25, 'sine', now + 0.25, 0.2); // E5
+        createOscillator(783.99, 'sine', now + 0.5, 0.4);  // G5
         
-        oscillator.start(startTime);
-        oscillator.stop(startTime + duration);
+        const backgroundOsc = audioCtx.createOscillator();
+        const backgroundGain = audioCtx.createGain();
         
-        return oscillator;
+        backgroundOsc.type = 'sine';
+        backgroundOsc.frequency.value = 261.63; // C4
+        
+        backgroundGain.gain.setValueAtTime(0, now);
+        backgroundGain.gain.linearRampToValueAtTime(0.1, now + 0.1);
+        backgroundGain.gain.linearRampToValueAtTime(0, now + 0.9);
+        
+        backgroundOsc.connect(backgroundGain);
+        backgroundGain.connect(audioCtx.destination);
+        
+        backgroundOsc.start(now);
+        backgroundOsc.stop(now + 0.9);
     }
     
-    // Create a pleasant sound sequence
-    const now = audioCtx.currentTime;
-    
-    // First note
-    createOscillator(523.25, 'sine', now, 0.2);       // C5
-    
-    // Second note
-    createOscillator(659.25, 'sine', now + 0.25, 0.2); // E5
-    
-    // Third note
-    createOscillator(783.99, 'sine', now + 0.5, 0.4);  // G5
-    
-    // Add a subtle background tone
-    const backgroundOsc = audioCtx.createOscillator();
-    const backgroundGain = audioCtx.createGain();
-    
-    backgroundOsc.type = 'sine';
-    backgroundOsc.frequency.value = 261.63; // C4
-    
-    backgroundGain.gain.setValueAtTime(0, now);
-    backgroundGain.gain.linearRampToValueAtTime(0.1, now + 0.1);
-    backgroundGain.gain.linearRampToValueAtTime(0, now + 0.9);
-    
-    backgroundOsc.connect(backgroundGain);
-    backgroundGain.connect(audioCtx.destination);
-    
-    backgroundOsc.start(now);
-    backgroundOsc.stop(now + 0.9);
+    playSound(); // Play immediately
+    timerAudioInterval = setInterval(playSound, 2000); // Repeat every 2 seconds
 }
 
-// Function to schedule page refreshes at specific times
+// Update schedulePageRefreshes function to use TIME_SETTINGS
 function schedulePageRefreshes() {
     function scheduleRefresh(hour) {
         const now = new Date();
@@ -1447,9 +1707,8 @@ function schedulePageRefreshes() {
         }, timeUntilRefresh);
     }
 
-    // Schedule refreshes at 12 AM and 6 AM
-    scheduleRefresh(0);  // 12 AM
-    scheduleRefresh(6);  // 6 AM
+    // Schedule refreshes at configured times
+    TIME_SETTINGS.REFRESH_TIMES.forEach(hour => scheduleRefresh(hour));
 }
 
 // Add to window.onload
@@ -1463,3 +1722,260 @@ window.onload = function() {
     schedulePageRefreshes();  // Add this line
     // ... existing code ...
 };
+
+function skipName() {
+    document.getElementById('welcome-modal').style.display = 'none';
+    // Set a flag in localStorage to indicate user has completed onboarding
+    localStorage.setItem('onboardingComplete', 'true');
+    updateGreeting();
+}
+
+function addQuickLink() {
+    const editor = document.querySelector('.quick-links-editor');
+    const index = document.querySelectorAll('.link-edit').length;
+    
+    const newLink = document.createElement('div');
+    newLink.className = 'link-edit';
+    newLink.dataset.index = index;
+    newLink.innerHTML = `
+        <input type="text" placeholder="Title" class="link-title">
+        <input type="text" placeholder="URL" class="link-url">
+        <button onclick="deleteQuickLink(${index})" class="clear-btn">×</button>
+        <span class="drag-handle">⋮⋮</span>
+    `;
+    
+    editor.appendChild(newLink);
+    setupEditorDragAndDrop(editor); // Refresh drag and drop handlers
+}
+
+function deleteQuickLink(index) {
+    const linkElement = document.querySelector(`.link-edit[data-index="${index}"]`);
+    if (linkElement) {
+        linkElement.remove();
+        // Update remaining indexes
+        document.querySelectorAll('.link-edit').forEach((item, idx) => {
+            item.dataset.index = idx;
+        });
+    }
+}
+
+function saveQuickLinks() {
+    const links = [];
+    document.querySelectorAll('.link-edit').forEach(linkEdit => {
+        const title = linkEdit.querySelector('.link-title').value.trim();
+        let url = linkEdit.querySelector('.link-url').value.trim();
+        
+        if (title && url) {
+            links.push({ 
+                title, 
+                url: ensureHttps(url)
+            });
+        }
+    });
+    
+    localStorage.setItem('quickLinks', JSON.stringify(links));
+    loadQuickLinks();
+    closeQuickLinksEditor();
+}
+
+function closeQuickLinksEditor() {
+    const modal = document.querySelector('.modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function resetAllSettings() {
+    if (confirm('Are you sure you want to reset all settings? This action cannot be undone.')) {
+        // Clear name
+        localStorage.removeItem('userName');
+        
+        // Clear countdown preferences
+        localStorage.removeItem('showRoom');
+        localStorage.removeItem('showSubject');
+        
+        // Clear quick links
+        localStorage.removeItem('quickLinks');
+        localStorage.removeItem('quickLinksEnabled');
+        
+        // Clear notes
+        localStorage.removeItem('notes');
+        localStorage.removeItem('notepadEnabled');
+        
+        // Clear theme
+        localStorage.removeItem('theme');
+        
+        // Clear pomodoro settings
+        localStorage.removeItem('pomodoroEnabled');
+        
+        // Clear onboarding flag
+        localStorage.removeItem('onboardingComplete');
+
+        // Clear timetable data
+        localStorage.removeItem('userTimetable');
+        userTimetable = null;
+        
+        // Reset UI elements
+        document.getElementById('name-input').value = '';
+        document.getElementById('show-room').checked = true;
+        document.getElementById('show-subject').checked = true;
+        document.getElementById('quick-links-toggle').checked = false;
+        document.getElementById('notepad-toggle').checked = false;
+        document.getElementById('pomodoro-toggle').checked = false;
+        
+        // Reset displays
+        updateGreeting();
+        loadQuickLinks();
+        loadNotes();
+        setTheme('default');
+        updateSchedule(); // Update schedule display after clearing timetable
+        
+        // Close settings modal
+        toggleSettingsModal();
+        
+        // Show success message
+        alert('All settings have been reset successfully.');
+    }
+}
+
+// Add function to make timer duration editable
+function makeTimerEditable() {
+    const timerDisplay = document.querySelector('.timer-display');
+    
+    // Create input element
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = formatTime(timeLeft);
+    input.className = 'timer-input';
+    input.style.width = '100%';
+    input.style.background = 'transparent';
+    input.style.border = 'none';
+    input.style.fontSize = 'inherit';
+    input.style.textAlign = 'center';
+    input.style.color = 'inherit';
+    input.style.fontFamily = 'inherit';
+    
+    // Replace display with input
+    timerDisplay.textContent = '';
+    timerDisplay.appendChild(input);
+    input.focus();
+    input.select();
+    
+    let inputBuffer = '';
+    
+    // Handle input changes
+    input.addEventListener('input', (e) => {
+        // Remove any non-numeric characters
+        const digit = e.target.value.replace(/[^0-9]/g, '');
+        
+        // Add the last typed digit to our buffer
+        if (digit.length > 0) {
+            inputBuffer += digit.slice(-1);
+        }
+        
+        // Keep only the last 4 digits
+        inputBuffer = inputBuffer.slice(-4);
+        
+        // Format the display like a microwave
+        let display = '00:00';
+        if (inputBuffer.length > 0) {
+            const padded = inputBuffer.padStart(4, '0');
+            display = padded.slice(0, 2) + ':' + padded.slice(2);
+        }
+        
+        input.value = display;
+        
+        // Position cursor at the end
+        input.setSelectionRange(display.length, display.length);
+    });
+    
+    // Handle backspace
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace') {
+            e.preventDefault();
+            inputBuffer = inputBuffer.slice(0, -1);
+            let display = '00:00';
+            if (inputBuffer.length > 0) {
+                const padded = inputBuffer.padStart(4, '0');
+                display = padded.slice(0, 2) + ':' + padded.slice(2);
+            }
+            input.value = display;
+        }
+    });
+    
+    // Handle input completion
+    function handleInput() {
+        if (inputBuffer.length === 0) {
+            timerDisplay.removeChild(input);
+            updateTimerDisplay(timeLeft);
+            return;
+        }
+        
+        const padded = inputBuffer.padStart(4, '0');
+        const minutes = parseInt(padded.slice(0, 2));
+        const seconds = parseInt(padded.slice(2));
+        
+        if (seconds < 60) {
+            const totalSeconds = (minutes * 60) + seconds;
+            if (totalSeconds > 0) {
+                if (timerMode === 'pomodoro') {
+                    timerDuration = totalSeconds;
+                } else {
+                    breakDuration = totalSeconds;
+                }
+                timeLeft = totalSeconds;
+                
+                // Save to localStorage
+                localStorage.setItem('timerDurations', JSON.stringify({
+                    pomodoro: timerDuration,
+                    break: breakDuration
+                }));
+            }
+        }
+        
+        timerDisplay.removeChild(input);
+        updateTimerDisplay(timeLeft);
+    }
+    
+    input.addEventListener('blur', handleInput);
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleInput();
+        }
+    });
+}
+
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+// Update the initialization code
+document.addEventListener('DOMContentLoaded', function() {
+    // Load saved timer durations
+    const savedDurations = localStorage.getItem('timerDurations');
+    if (savedDurations) {
+        const durations = JSON.parse(savedDurations);
+        timerDuration = durations.pomodoro;
+        breakDuration = durations.break;
+        timeLeft = timerDuration;
+        updateTimerDisplay(timeLeft);
+    }
+    
+    // Initialize notification system
+    if ('Notification' in window) {
+        const askedBefore = localStorage.getItem('notificationAsked') === 'true';
+        if (askedBefore && Notification.permission === 'default') {
+            localStorage.removeItem('notificationAsked');
+        }
+    }
+    
+    // Add click handler for timer display
+    const timerDisplay = document.querySelector('.timer-display');
+    timerDisplay.addEventListener('click', function() {
+        if (!isTimerRunning) {
+            makeTimerEditable();
+        }
+    });
+});
