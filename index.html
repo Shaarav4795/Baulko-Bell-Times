@@ -72,7 +72,20 @@
         </div>
 
         <div class="timetable-upload">
-            <h3>Import Timetable</h3>
+            <h3>Import Timetable 
+                <svg class="help-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-7v2h2v-2h-2zm2-1.645A3.502 3.502 0 0012 6.5a3.501 3.501 0 00-3.433 2.813l1.962.393A1.5 1.5 0 1112 11.5a1 1 0 00-1 1V14h2v-.645z" fill="currentColor"/>
+                </svg>
+                <div class="help-tooltip">
+                    <h4>How to Upload Your Timetable:</h4>
+                    <ol>
+                        <li>Navigate to the "My Timetable" section in your Sentral dashboard</li>
+                        <li>Look for the "Export as iCal" button in the top-right corner and click it to download your timetable</li>
+                        <li>Use the "Import Timetable" button below to upload the downloaded file</li>
+                        <li>Your personalized class schedule will now appear in the bell times display!</li>
+                    </ol>
+                </div>
+            </h3>
             <div class="upload-container">
                 <input type="file" id="timetableupload" accept=".ics" />
                 <button onclick="document.getElementById('timetableupload').click()" class="upload-btn">Choose ICS File</button>

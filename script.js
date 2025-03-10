@@ -230,7 +230,11 @@ function updateSchedule() {
                 
                 const timeLabel = document.createElement("span");
                 timeLabel.className = "current-time-label";
-                timeLabel.textContent = formatTime(now);
+                timeLabel.textContent = now.toLocaleTimeString('en-US', { 
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
                 indicator.appendChild(timeLabel);
                 
                 periodElement.appendChild(indicator);
